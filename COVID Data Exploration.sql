@@ -1,38 +1,28 @@
 # -----FIXING DATE OF COVIDDEATHS-----
 select * from coviddeaths;
 
-# add new column
 alter table coviddeaths add column date_formatted date;
-# Convert Dates and Populate New Column
 update coviddeaths
 set date_formatted = str_to_date(date_death, '%d/%m/%Y');
-# Drop Old Column
 alter table coviddeaths drop column date_death;
-# Rename New Column
 alter table coviddeaths change column date_formatted date_death DATE;
 
 SHOW COLUMNS FROM coviddeaths;
 
-# move date to after location
 ALTER TABLE coviddeaths
 MODIFY COLUMN date_death DATE AFTER location;
 
 # -----FIXING DATE OF COVIDVACINES-----
 select * from covidvacines;
 
-# add new column
 alter table covidvacines add column date_formatted date;
-# Convert Dates and Populate New Column
 update covidvacines
 set date_formatted = str_to_date(date_vacine, '%d/%m/%Y');
-# Drop Old Column
 alter table covidvacines drop column date_vacine;
-# Rename New Column
 alter table covidvacines change column date_formatted date_vacine DATE;
 
 SHOW COLUMNS FROM covidvacines;
 
-# move date to after location
 ALTER TABLE covidvacines
 MODIFY COLUMN date_vacine DATE AFTER location;
 
@@ -82,7 +72,7 @@ where continent != ''
 group by continent
 order by Total_Death_Count desc;
 
-# deaths by global nuumbers
+# deaths by global numbers
 select date_death, SUM(new_cases) as total_cases, SUM(new_deaths) as total_deaths, 
 	(SUM(new_deaths)/SUM(new_cases))*100 as Death_Percentage
 from project_covid19.coviddeaths 
@@ -97,7 +87,7 @@ from project_covid19.coviddeaths
 where continent != ''
 order by 1,2;
 
-
+# change date header to avoid conflict
 ALTER TABLE project_covid19.coviddeaths RENAME COLUMN `date` TO `date_death`;
 ALTER TABLE project_covid19.covidvacines RENAME COLUMN `date` TO `date_vacine`;
 
@@ -134,7 +124,6 @@ SELECT *, (Running_Vacc_Count/population)*100 as Percent_Running_Vacc_Count
 FROM PopvsVac;
 
 -- temp table option to do the running vacc count
--- Step 1: Create the table
 DROP TABLE if exists PercentPopulationVaccinated;
 CREATE TABLE PercentPopulationVaccinated
 (
@@ -145,7 +134,6 @@ CREATE TABLE PercentPopulationVaccinated
     new_vaccinations bigint,
     Running_Vacc_Count bigint
 );
--- Step 2: Insert data into the table, handling empty strings
 INSERT INTO PercentPopulationVaccinated
 SELECT dea.continent, dea.location, dea.date_death, dea.population, 
     IFNULL(NULLIF(vacc.new_vaccinations, ''), 0) AS new_vaccinations,
@@ -154,7 +142,6 @@ FROM project_covid19.coviddeaths AS dea
 JOIN project_covid19.covidvacines AS vacc
     ON dea.location = vacc.location
     AND dea.date_death = vacc.date_vacine;
--- Step 3: Select data and calculate the percentage of the population vaccinated
 SELECT *, (Running_Vacc_Count/population)*100 AS Percent_Running_Vacc_Count
 FROM PercentPopulationVaccinated;
 
